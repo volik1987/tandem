@@ -202,7 +202,7 @@ function buildTouch(duo) {
     const joyA = z.querySelector('.joyA'), joy = z.querySelector('.joy'), knob = z.querySelector('.knob');
     let jid = null, ox = 0, oy = 0;
     joyA.addEventListener('pointerdown', e => {
-      e.preventDefault(); if (jid !== null) return;
+      e.preventDefault(); // новое касание всегда забирает джойстик — даже если iOS «потерял» отпускание прошлого
       jid = e.pointerId; joyA.setPointerCapture(jid); joyA.classList.add('used');
       const r = joyA.getBoundingClientRect(); ox = e.clientX - r.left; oy = e.clientY - r.top;
       joy.style.left = ox + 'px'; joy.style.top = oy + 'px'; joy.classList.add('on'); knob.style.transform = '';
@@ -231,6 +231,25 @@ function buildTouch(duo) {
     }
   }
 }
+// все пальцы убраны или ушли из приложения — отпускаем всё (iOS иногда не присылает pointerup)
+function touchReleaseAll() {
+  for (const z of TZ) { z.dx = z.dy = 0; z.jump = z.act = 0; }
+  document.querySelectorAll('#touch .joy.on').forEach(j => j.classList.remove('on'));
+  document.querySelectorAll('#touch .tb.on').forEach(b => b.classList.remove('on'));
+}
+for (const t of ['touchend', 'touchcancel']) addEventListener(t, e => { if (!e.touches.length) touchReleaseAll(); }, { passive: true });
+addEventListener('blur', touchReleaseAll); document.addEventListener('visibilitychange', touchReleaseAll);
+// запрет зума на iOS: щипок и двойной тап (Safari игнорирует user-scalable=no)
+for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { const t = Date.now(); if (t - lastTouchEnd < 320 && !(e.target.closest && e.target.closest('input'))) e.preventDefault(); lastTouchEnd = t; }, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+if (window.visualViewport) visualViewport.addEventListener('resize', () => {
+  if (visualViewport.scale <= 1.01) return;
+  const vp = document.querySelector('meta[name=viewport]'), c = vp.getAttribute('content').replace(/,minimum-scale=1/, '');
+  vp.setAttribute('content', c + ',minimum-scale=1'); setTimeout(() => vp.setAttribute('content', c), 50);
+});
 function markTouch() { document.body.classList.add('touch'); }
 if (matchMedia('(pointer:coarse)').matches) markTouch();
 addEventListener('touchstart', markTouch, { passive: true });
