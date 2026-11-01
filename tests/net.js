@@ -6,7 +6,7 @@ const lvl = +(process.argv[2] || 2), q = process.argv[3] || '';
   let ok = false;
   try {
     const p = await br.open(`http://localhost:8811/tests/net.html?lvl=${lvl}${q ? '&' + q : ''}`);
-    await p.waitFor("RESULT.host && RESULT.join && RESULT.host.scr==='play' && RESULT.join.scr==='play'", 20000);
+    await p.waitFor("RESULT.host && RESULT.join && RESULT.host.scr==='play' && RESULT.join.scr==='play'", 45000);
     console.log('оба в игре');
     const t0 = Date.now(); let shotDone = false, doorsH = {}, doorsJ = {}, seen = [];
     let sync = { hostSeesGuestMoved: false, guestSeesHostMoved: false };

@@ -15,8 +15,9 @@ const P = new URLSearchParams(location.search);
 const LV = +(P.get('lvl') || 2), CODE = P.get('code') || String(1000 + Math.floor(Math.random() * 9000));
 const extra = (P.get('lag') ? '&lag=' + P.get('lag') : '') + (P.get('loss') ? '&loss=' + P.get('loss') : '');
 const host = document.getElementById('host'), join = document.getElementById('join');
-host.src = `../index.html?local=1&all=1&autohost=${CODE}&lvl=${LV}${extra}`;
-setTimeout(() => { join.src = `../index.html?local=1&all=1&autojoin=${CODE}${extra}`; }, 700);
+const loc = P.has('peer') ? '' : 'local=1&';
+host.src = `../index.html?${loc}all=1&autohost=${CODE}&lvl=${LV}${extra}`;
+setTimeout(() => { join.src = `../index.html?${loc}all=1&autojoin=${CODE}${extra}`; }, P.has('peer') ? 4000 : 700);
 const logEl = document.getElementById('log');
 const log = s => { logEl.textContent += s + '\n'; };
 window.RESULT = { phase: 'start', checks: {}, errors: [] };
@@ -33,7 +34,7 @@ function hookUp() {
       const V = {}; const S0 = G.S;
       for (const k of ['b', 'p', 'd', 'v', 'bt', 'c', 'ch', 'm', 'k', 'st', 'tm']) Object.defineProperty(V, k, { get: () => S0[k] });
       Object.defineProperty(V, 'h', { get: () => { const JG = J.TANDEM.G; const ph = JG.P && JG.auth && JG.auth.st === 'play' && JG.L && JG.L.idx === G.L.idx ? JG.P.h[1] : S0.h[1]; return [S0.h[0], ph]; } });
-      gen = TBOT.SOLUTIONS[G.L.idx](TBOT.makeBot(H.TANDEM.C, G.L, V, { lat: +(P.get('blat') || 1) }))[Symbol.iterator]();
+      gen = TBOT.SOLUTIONS[G.L.idx](TBOT.makeBot(H.TANDEM.C, G.L, V, { lat: +(P.get('blat') || 1), verify: true }))[Symbol.iterator]();
       if (n > 1) log('рестарт уровня на тике ' + n);
     }
     let v = [0, 0];

@@ -128,7 +128,7 @@ function bcTransport() {
     let n = 0;
     const iv = setInterval(() => {
       if (other || dead) return clearInterval(iv);
-      if (++n > 12) { clearInterval(iv); h.error('Игра с таким кодом не найдена'); return; }
+      if (++n > 32) { clearInterval(iv); h.error('Игра с таким кодом не найдена'); return; }
       post({ t: 'hello', code: c, from: me });
     }, 250);
     post({ t: 'hello', code: c, from: me });
@@ -196,7 +196,7 @@ function buildTouch(duo) {
     let jid = null, ox = 0, oy = 0;
     joyA.addEventListener('pointerdown', e => {
       e.preventDefault(); if (jid !== null) return;
-      jid = e.pointerId; joyA.setPointerCapture(jid);
+      jid = e.pointerId; joyA.setPointerCapture(jid); joyA.classList.add('used');
       const r = joyA.getBoundingClientRect(); ox = e.clientX - r.left; oy = e.clientY - r.top;
       joy.style.left = ox + 'px'; joy.style.top = oy + 'px'; joy.classList.add('on'); knob.style.transform = '';
       st.dx = st.dy = 0;
@@ -269,7 +269,7 @@ function enterPlay() {
 function hostTakeRemote() {
   const q = G.q;
   while (q.length && q[0][0] <= G.ack) q.shift();
-  if (q.length > 4) { // очередь растёт — догоняем, сохраняя нажатия прыжка/действия
+  if (q.length > 6) { // очередь растёт — догоняем, сохраняя нажатия прыжка/действия
     const drop = q.splice(0, q.length - 2);
     let edge = 0; for (const d of drop) edge |= d[1] & (IN.U | IN.A);
     q[0] = [q[0][0], q[0][1] | edge];
@@ -773,7 +773,6 @@ function drawHero(c, i, h, t, me) {
     const col = i ? '#8ff3ff' : '#ffcf4a', yy = h.y - 22 + Math.sin(t * 4) * 2;
     c.fillStyle = col; c.beginPath(); c.moveTo(cx - 5, yy); c.lineTo(cx + 5, yy); c.lineTo(cx, yy + 6); c.fill();
   }
-  c.restore && 0;
 }
 
 /* ---------- частицы ---------- */

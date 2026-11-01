@@ -15,7 +15,16 @@ function makeBot(C, L, S, opt = {}) {
     let stable = 0;
     for (let t = 0; t < max; t++) {
       const H = S.h[h], dx = target - hx(h), ad = Math.abs(dx), dir = dx > 0 ? IN.R : IN.L;
-      if (ad < 3.5 && H.g && (LAT === 1 || Math.abs(H.vx) < 0.15)) { if (++stable >= LAT) { yield* settle(h); return; } yield [0, 0]; continue; }
+      if (ad < 3.5 && H.g && (LAT === 1 || Math.abs(H.vx) < 0.15)) {
+        if (++stable >= LAT) {
+          yield* settle(h);
+          if (!opt.verify) return;
+          for (let w = 0; w < 20; w++) yield [0, 0]; // по сети: убедиться, что сверка с хостом не сдвинула героя
+          if (Math.abs(target - hx(h)) < 4.5) return;
+          stable = 0;
+        } else yield [0, 0];
+        continue;
+      }
       stable = 0;
       let i = 0;
       const stop = H.vx * H.vx / (2 * 1.2) + (LAT > 1 ? Math.abs(H.vx) * LAT : 0);
