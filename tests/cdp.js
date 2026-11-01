@@ -7,7 +7,7 @@ async function launch({ width = 1280, height = 720, port = 9333 + Math.floor(Mat
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tandem-chrome-'));
   const proc = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, `--window-size=${width},${height}`,
     '--no-first-run', '--no-default-browser-check', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', 'about:blank'], { stdio: 'ignore' });
+    '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', ...(process.env.CHROME_EXTRA ? process.env.CHROME_EXTRA.split(' ') : []), 'about:blank'], { stdio: 'ignore' });
   let ver;
   for (let i = 0; i < 100; i++) {
     try { ver = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); break; } catch (e) { await sleep(100); }

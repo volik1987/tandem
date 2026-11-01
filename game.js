@@ -42,17 +42,22 @@ function loadScript(src) {
 }
 const rndCode = () => String(1000 + Math.floor(Math.random() * 9000));
 
+const NETLOG = [];
+const nlog = (m) => { NETLOG.push(Math.round(performance.now()) + ' ' + m); if (NETLOG.length > 60) NETLOG.shift(); };
 function peerTransport() {
   let peer = null, conn = null, dead = false;
   const tr = { kind: 'peer' };
   const fail = (h, e) => {
-    const t = e && e.type;
+    const t = e && e.type; nlog('error ' + t + ' ' + (e && e.message));
     if (t === 'peer-unavailable') h.error('Игра с таким кодом не найдена');
     else if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed') h.error('Нет связи с сервером. Проверь интернет');
     else if (t === 'browser-incompatible') h.error('Этот браузер не умеет играть по сети');
     else h.error('Ошибка сети: ' + (t || e));
   };
   const wire = (c, h) => {
+    const pc = () => c.peerConnection;
+    const watch = setInterval(() => { const p = pc(); if (p) { p.addEventListener('iceconnectionstatechange', () => nlog('ice ' + p.iceConnectionState)); clearInterval(watch); } }, 100);
+    c.on('open', () => nlog('conn open'));
     c.on('data', d => h.data(d));
     c.on('close', () => { if (!dead) h.close(); });
     c.on('error', () => { if (!dead) h.close(); });
@@ -61,13 +66,14 @@ function peerTransport() {
     try { await loadScript('https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'); } catch (e) { h.error('Не удалось загрузить сетевой модуль. Проверь интернет'); return; }
     const attempt = (c, n) => {
       peer = new Peer(PREFIX + c, { debug: 0 });
-      peer.on('open', () => h.open(c));
+      peer.on('open', () => { nlog('peer open ' + c); h.open(c); });
       peer.on('error', e => {
         if (e.type === 'unavailable-id' && n < 6) { peer.destroy(); attempt(rndCode(), n + 1); }
         else fail(h, e);
       });
       peer.on('disconnected', () => { if (!dead && peer && !peer.destroyed) try { peer.reconnect(); } catch (e) {} });
       peer.on('connection', c2 => {
+        nlog('incoming connection');
         if (conn && conn.open) { c2.on('open', () => c2.close()); return; }
         conn = c2;
         c2.on('open', () => h.conn());
@@ -82,6 +88,7 @@ function peerTransport() {
     let opened = false;
     const to = setTimeout(() => { if (!opened && !dead) h.error('Игра с таким кодом не найдена'); }, 20000);
     peer.on('open', () => {
+      nlog('peer open (join)');
       conn = peer.connect(PREFIX + code, { serialization: 'json', reliable: false });
       conn.on('open', () => { opened = true; clearTimeout(to); h.conn(); });
       wire(conn, h);
@@ -244,7 +251,7 @@ const G = {
   corr: { x: 0, y: 0 }, cmdId: 0, cmd: null, rtt: 0, pingT: 0,
   prevView: null, wonShown: false, botGen: null
 };
-window.TANDEM = { G, C, force: null, other: () => otherHero() };
+window.TANDEM = { G, C, force: null, other: () => otherHero(), netlog: NETLOG };
 
 function view() { return G.mode === 'client' ? G.P || G.auth : G.S; }
 function statusState() { return G.mode === 'client' ? G.auth : G.S; }

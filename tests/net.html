@@ -22,7 +22,7 @@ const logEl = document.getElementById('log');
 const log = s => { logEl.textContent += s + '\n'; };
 window.RESULT = { phase: 'start', checks: {}, errors: [] };
 const R = window.RESULT;
-let gen = null, botS = null, maxErr = 0, doorLag = [], n = 0;
+let bot = null, gen = null, botS = null, maxErr = 0, doorLag = [], n = 0;
 function hookUp() {
   const H = host.contentWindow, J = join.contentWindow;
   if (!H.TANDEM || !J.TANDEM) return setTimeout(hookUp, 100);
@@ -32,14 +32,19 @@ function hookUp() {
       botS = G.S;
       // бот видит Уголька глазами хоста, а Каплю — глазами гостя (его предсказание), как живые игроки
       const V = {}; const S0 = G.S;
-      for (const k of ['b', 'p', 'd', 'v', 'bt', 'c', 'ch', 'm', 'k', 'st', 'tm']) Object.defineProperty(V, k, { get: () => S0[k] });
+
+      for (const k of ['b', 'd', 'v', 'bt', 'c', 'ch', 'm', 'k', 'st', 'tm']) Object.defineProperty(V, k, { get: () => S0[k] });
+      // платформы: когда едет Капля — смотрим на них её глазами (предсказанный мир гостя)
+      Object.defineProperty(V, 'p', { get: () => { const JG = J.TANDEM.G; return bot && bot.st.cur.startsWith('ride(1') && JG.P && JG.auth && JG.auth.st === 'play' ? JG.P.p : S0.p; } });
       Object.defineProperty(V, 'h', { get: () => { const JG = J.TANDEM.G; const ph = JG.P && JG.auth && JG.auth.st === 'play' && JG.L && JG.L.idx === G.L.idx ? JG.P.h[1] : S0.h[1]; return [S0.h[0], ph]; } });
-      gen = TBOT.SOLUTIONS[G.L.idx](TBOT.makeBot(H.TANDEM.C, G.L, V, { lat: +(P.get('blat') || 1), verify: true }))[Symbol.iterator]();
+      bot = TBOT.makeBot(H.TANDEM.C, G.L, V, { lat: +(P.get('blat') || 1), verify: true });
+      gen = TBOT.SOLUTIONS[G.L.idx](bot)[Symbol.iterator]();
       if (n > 1) log('рестарт уровня на тике ' + n);
     }
     let v = [0, 0];
     if (gen) { try { const r = gen.next(); if (r.done) gen = null; else v = r.value; } catch (e) { R.errors.push(e.message); log('бот: ' + e.message); gen = null; } }
     H.TANDEM.force = v[0]; J.TANDEM.force = v[1];
+    if (G.S.st === 'dead' && G.S.sT === 1) { const m = 'гибель: ' + G.S.who + ' ' + G.S.h[G.S.who].dead + ' на шаге ' + (bot && bot.st.cur); log(m); R.errors.push(m); }
     // сверки
     const JG = J.TANDEM.G;
     if (JG.P && JG.auth && JG.auth.st === 'play') {
