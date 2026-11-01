@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const P = new URLSearchParams(location.search), S = +(P.get('s') || 512), M = P.has('mask');
+const c = document.getElementById('c'); c.width = c.height = S;
+const x = c.getContext('2d'); x.scale(S / 512, S / 512);
+// фон
+const R = 0;
+x.beginPath(); x.roundRect ? x.roundRect(0, 0, 512, 512, R) : x.rect(0, 0, 512, 512); x.clip();
+const g = x.createLinearGradient(0, 0, 512, 512); g.addColorStop(0, '#3a1408'); g.addColorStop(0.5, '#120d24'); g.addColorStop(1, '#06223f');
+x.fillStyle = g; x.fillRect(0, 0, 512, 512);
+x.globalCompositeOperation = 'lighter';
+for (const [cx, cy, col] of [[150, 300, 'rgba(255,110,30,'], [362, 300, 'rgba(60,170,255,']]) {
+  const rg = x.createRadialGradient(cx, cy, 0, cx, cy, 230); rg.addColorStop(0, col + '.55)'); rg.addColorStop(1, col + '0)'); x.fillStyle = rg; x.fillRect(0, 0, 512, 512);
+}
+x.globalCompositeOperation = 'source-over';
+const k = M ? 0.78 : 1; x.translate(256, 256); x.scale(k, k); x.translate(-256, -256);
+// площадка
+const pg = x.createLinearGradient(0, 380, 0, 430); pg.addColorStop(0, '#6a5fa8'); pg.addColorStop(1, '#2a2350');
+x.fillStyle = pg; x.fillRect(60, 384, 392, 48); x.fillStyle = '#b8aaff'; x.fillRect(60, 384, 392, 7);
+function eyes(cx, ey, f) { for (const s of [-1, 1]) { const ex = cx + f * 6 + s * 13; x.fillStyle = '#fff'; x.beginPath(); x.ellipse(ex, ey, 9, 12, 0, 0, 7); x.fill(); x.fillStyle = '#1a0a10'; x.beginPath(); x.arc(ex + f * 3, ey + 2, 5, 0, 7); x.fill(); } }
+// Уголёк
+(function () {
+  const cx = 170, by = 384;
+  for (let i = -1; i <= 1; i++) {
+    const bx = cx + i * 18, tipx = cx + i * 16 + i * 6, tipy = by - 150 - (i === 0 ? 50 : 15);
+    const fg = x.createLinearGradient(0, tipy, 0, by - 60); fg.addColorStop(0, 'rgba(255,240,150,0)'); fg.addColorStop(0.4, '#ffd34a'); fg.addColorStop(1, '#ff6a1a');
+    x.fillStyle = fg; x.beginPath(); x.moveTo(bx - 20, by - 70); x.quadraticCurveTo(bx - 14, tipy + 30, tipx, tipy); x.quadraticCurveTo(bx + 14, tipy + 30, bx + 20, by - 70); x.fill();
+  }
+  const g = x.createRadialGradient(cx - 12, by - 70, 4, cx, by - 52, 62); g.addColorStop(0, '#fff7c8'); g.addColorStop(0.35, '#ffb032'); g.addColorStop(0.75, '#ff5a1a'); g.addColorStop(1, '#a8200c');
+  x.fillStyle = g; x.beginPath(); x.ellipse(cx, by - 52, 52, 54, 0, 0, 7); x.fill();
+  eyes(cx, by - 60, 1);
+})();
+// Капля
+(function () {
+  const cx = 342, by = 384, tipy = by - 150;
+  const g = x.createRadialGradient(cx - 16, by - 70, 4, cx, by - 50, 70); g.addColorStop(0, '#f0ffff'); g.addColorStop(0.4, '#66d4ff'); g.addColorStop(0.85, '#1f7fe0'); g.addColorStop(1, '#1650b0');
+  x.fillStyle = g; x.beginPath(); x.moveTo(cx, tipy); x.bezierCurveTo(cx + 18, tipy + 40, cx + 54, by - 86, cx + 52, by - 50); x.arc(cx, by - 50, 52, 0, Math.PI); x.bezierCurveTo(cx - 54, by - 86, cx - 18, tipy + 40, cx, tipy); x.fill();
+  x.fillStyle = 'rgba(255,255,255,.75)'; x.beginPath(); x.ellipse(cx - 22, by - 78, 10, 18, -0.5, 0, 7); x.fill();
+  eyes(cx, by - 50, -1);
+})();
+document.title = 'ready';
+</script></body></html>

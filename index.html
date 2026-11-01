@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0a14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Тандем">
+<meta name="description" content="Кооперативный платформер-головоломка на двоих: Уголёк и Капля проходят уровни только вместе. Каждый — на своём телефоне.">
+<title>Тандем — Уголёк и Капля</title>
+<style>
+:root{--bg:#0b0a14;--panel:rgba(18,16,34,.88);--line:#3a3560;--txt:#eef0ff;--mut:#9a9cc0;--fire:#ff7a2f;--fire2:#ffcf4a;--water:#3fb6ff;--water2:#8ff3ff;--ok:#7dffb0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:16px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;overscroll-behavior:none}
+canvas{display:block}
+#cv{position:fixed;inset:0;width:100%;height:100%}
+.screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:5}
+.screen.on{display:flex}
+#bgfx{position:fixed;inset:0;z-index:0;pointer-events:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 26px;box-shadow:0 20px 60px #000a,inset 0 1px 0 #ffffff14;max-width:min(760px,100%);max-height:100%;overflow:auto;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+h1.logo{margin:0 0 2px;font-size:clamp(40px,9vh,76px);letter-spacing:6px;font-weight:900;background:linear-gradient(90deg,var(--fire2),var(--fire) 40%,var(--water) 60%,var(--water2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px #ff7a2f55) drop-shadow(0 0 18px #3fb6ff55);text-align:center}
+.sub{margin:0 0 14px;text-align:center;color:var(--mut)}
+.sub b.f{color:var(--fire)} .sub b.w{color:var(--water)}
+.btns{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;color:var(--txt);background:linear-gradient(180deg,#2c2852,#1d1a38);border:1px solid #4a4480;border-radius:14px;padding:12px 18px;cursor:pointer;box-shadow:0 4px 0 #0007,inset 0 1px 0 #ffffff1c;font-weight:700;letter-spacing:.3px;touch-action:manipulation}
+button:hover{filter:brightness(1.15)} button:active{transform:translateY(2px);box-shadow:0 2px 0 #0007}
+button.big{font-size:18px;padding:14px 20px}
+button.fire{background:linear-gradient(180deg,#ff8a3d,#c9431b);border-color:#ffb27a;color:#fff}
+button.water{background:linear-gradient(180deg,#3fb6ff,#1d6fc9);border-color:#9fdcff;color:#fff}
+button.duo{background:linear-gradient(90deg,#c9431b,#7a3fa0 50%,#1d6fc9);border-color:#c8b6ff;color:#fff}
+button.ghost{background:transparent;border-color:#4a4480;box-shadow:none;font-weight:600}
+button:disabled{opacity:.45;pointer-events:none}
+.menuwrap{display:flex;gap:26px;align-items:center}
+#heroPrev{width:220px;height:170px}
+.how{font-size:13px;color:var(--mut);margin-top:12px;line-height:1.45}
+.how b{color:var(--txt)}
+#levels .card{max-width:min(980px,100%);width:100%}
+.lvgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:10px}
+.lv{position:relative;border-radius:14px;border:1px solid #4a4480;background:#15132b;padding:6px;cursor:pointer;text-align:left;box-shadow:0 4px 0 #0007}
+.lv canvas{width:100%;height:auto;border-radius:9px;display:block;aspect-ratio:40/22}
+.lv .nm{font-size:13px;font-weight:700;margin:5px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lv .st{font-size:14px;letter-spacing:2px;color:#ffd75a;margin:0 2px}
+.lv .st i{font-style:normal;color:#4a4670}
+.lv.lock{filter:grayscale(1) brightness(.55);cursor:default}
+.lv.lock::after{content:"🔒";position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font-size:30px}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hdr h2{margin:0;font-size:24px}
+.code{font-size:clamp(54px,14vh,96px);font-weight:900;letter-spacing:14px;text-align:center;margin:4px 0;background:linear-gradient(90deg,var(--fire2),var(--water2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lobby{display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center}
+#qr{background:#fff;border-radius:12px;padding:8px;width:min(210px,40vh);height:min(210px,40vh)}
+.status{color:var(--mut);text-align:center;margin:8px 0;min-height:22px}
+.status.err{color:#ff8a8a}
+.dots::after{content:"";animation:dots 1.4s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+input.codein{font:inherit;font-size:44px;font-weight:900;letter-spacing:12px;text-align:center;width:250px;padding:8px 10px;border-radius:14px;border:2px solid #4a4480;background:#0f0d20;color:var(--txt);outline:none}
+input.codein:focus{border-color:var(--water)}
+small.link{display:block;color:var(--mut);font-size:12px;text-align:center;word-break:break-all;max-width:260px;margin:6px auto 0}
+/* игра */
+#game{padding:0}
+#hudbtn{position:fixed;top:max(6px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:8;width:44px;height:40px;padding:0;font-size:18px;border-radius:12px;opacity:.85}
+#ovl{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:#05040ccc;padding:16px}
+#ovl.on{display:flex}
+#ovl .card{text-align:center;min-width:300px}
+#ovl h2{margin:0 0 6px;font-size:30px}
+.stars{font-size:44px;letter-spacing:6px;color:#ffd75a;text-shadow:0 0 18px #ffb000aa;margin:4px 0}
+.stars i{font-style:normal;color:#3a3660;text-shadow:none}
+.res{color:var(--mut);margin-bottom:14px}
+#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:20;background:#2a1022ee;border:1px solid #ff6a8a;color:#ffd0da;padding:12px 18px;border-radius:14px;display:none;font-weight:700;text-align:center;max-width:90%}
+#toast.on{display:block}
+#msgDead{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:7;font-size:clamp(22px,5vh,36px);font-weight:900;text-shadow:0 0 20px #000,0 2px 0 #000;display:none;text-align:center;pointer-events:none}
+#msgDead.on{display:block}
+/* сенсорное управление */
+#touch{position:fixed;inset:0;z-index:6;display:none}
+body.touch.playing #touch{display:flex}
+.tz{position:relative;flex:1;height:100%}
+.tz+.tz{border-left:1px dashed #ffffff18}
+.joyA{position:absolute;left:0;top:0;bottom:0;width:58%}
+.joy{position:absolute;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;border:2px solid #ffffff40;background:radial-gradient(circle,#ffffff10,#ffffff05 60%,transparent 70%);display:none;pointer-events:none}
+.joy.on{display:block}
+.knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff9,#fff3 60%);box-shadow:0 0 18px var(--pc,#fff8)}
+.joyHint{position:absolute;left:22%;bottom:18%;transform:translateX(-50%);color:#ffffff30;font-size:13px;text-align:center;pointer-events:none}
+.tb{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:12px;font-weight:800;color:#fff;border:2px solid #ffffff55;background:radial-gradient(circle at 40% 30%,#ffffff40,#ffffff12 70%);box-shadow:0 0 0 1px #0005,0 6px 16px #0006;padding:0;touch-action:none}
+.tb span{font-size:26px;line-height:1}
+.tb.on{background:radial-gradient(circle at 40% 30%,var(--pc,#fff),#ffffff30 75%);transform:scale(.94)}
+.tb.jump{width:96px;height:96px;right:max(18px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom))}
+.tb.act{width:74px;height:74px;right:calc(max(18px,env(safe-area-inset-right)) + 104px);bottom:max(30px,env(safe-area-inset-bottom))}
+.tz.p0{--pc:#ff8a3d} .tz.p1{--pc:#3fb6ff}
+#touch.duo .tb.jump{width:78px;height:78px;right:12px;bottom:18px}
+#touch.duo .tb.act{width:62px;height:62px;right:96px;bottom:24px}
+#touch.duo .tz{--sc:1}
+#rot{position:fixed;inset:0;z-index:30;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px}
+#rot div{font-size:64px;animation:rot 2s ease-in-out infinite}
+@keyframes rot{50%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){body.playing #rot{display:flex}}
+@media (max-height:520px){.card{padding:14px 18px;border-radius:16px} h1.logo{font-size:44px} #heroPrev{width:170px;height:130px} button.big{padding:10px 16px;font-size:16px} .btns{gap:7px} .lvgrid{gap:8px} .how{display:none}}
+@media (max-width:700px){.lvgrid{grid-template-columns:repeat(4,1fr)} .menuwrap{gap:12px}}
+@media (max-width:560px){.menuwrap{flex-direction:column} .lvgrid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<canvas id="bgfx"></canvas>
+
+<div id="menu" class="screen on">
+  <div class="card">
+    <h1 class="logo">ТАНДЕМ</h1>
+    <p class="sub"><b class="f">Уголёк</b> и <b class="w">Капля</b> проходят путь только вместе</p>
+    <div class="menuwrap">
+      <canvas id="heroPrev" width="440" height="340"></canvas>
+      <div class="btns" style="min-width:250px">
+        <button class="big duo" id="bHost">Создать игру по сети</button>
+        <button class="big" id="bJoin">Подключиться по коду</button>
+        <button class="big ghost" id="bLocal">Вдвоём на одном устройстве</button>
+        <button class="ghost" id="bInstall" style="display:none">Установить на экран</button>
+      </div>
+    </div>
+    <div class="how"><b>Как играть.</b> Каждый управляет своим героем на своём телефоне. Уголёк ходит по лаве и растапливает лёд, но гаснет в воде. Капля плавает в воде и замораживает её в мост, но испаряется в лаве. Зелёная жижа опасна обоим. Кнопки, рычаги, ящики и лифты — сообща. Цель: оба героя у своих дверей.<br>
+    <b>Клавиатура:</b> стрелки/WASD — бег, ↑/W/пробел — прыжок, E/Enter — действие. Вдвоём на одной клавиатуре: Уголёк — WASD + E, Капля — стрелки + Enter.</div>
+  </div>
+</div>
+
+<div id="levels" class="screen">
+  <div class="card">
+    <div class="hdr"><h2 id="lvTitle">Выбор уровня</h2><button class="ghost" id="bLvBack">Назад</button></div>
+    <div class="status" id="lvNote"></div>
+    <div class="lvgrid" id="lvGrid"></div>
+  </div>
+</div>
+
+<div id="lobby" class="screen">
+  <div class="card">
+    <div class="hdr"><h2>Новая игра</h2><button class="ghost" id="bLobbyBack">Отмена</button></div>
+    <div class="lobby">
+      <div>
+        <div class="status">Код игры для второго игрока</div>
+        <div class="code" id="codeBig">····</div>
+        <div class="status dots" id="lobbyStatus">Подключаемся к серверу</div>
+        <div class="status">Ты — <b style="color:var(--fire)">Уголёк</b>, друг — <b style="color:var(--water)">Капля</b></div>
+      </div>
+      <div><canvas id="qr" width="420" height="420"></canvas><small class="link" id="joinLink"></small></div>
+    </div>
+  </div>
+</div>
+
+<div id="joinScr" class="screen">
+  <div class="card" style="text-align:center">
+    <div class="hdr"><h2>Подключиться</h2><button class="ghost" id="bJoinBack">Назад</button></div>
+    <p class="status">Введи 4 цифры с экрана друга (или отсканируй его QR-код камерой)</p>
+    <input class="codein" id="codeIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="0000">
+    <div class="status" id="joinStatus"></div>
+    <div class="row"><button class="big water" id="bJoinGo">Подключиться</button></div>
+  </div>
+</div>
+
+<div id="wait" class="screen">
+  <div class="card" style="text-align:center">
+    <h2 style="margin:0 0 8px">Подключено!</h2>
+    <p class="status dots" id="waitStatus">Хост выбирает уровень</p>
+    <p class="status">Ты — <b style="color:var(--water)">Капля</b></p>
+    <button class="ghost" id="bWaitBack">Выйти</button>
+  </div>
+</div>
+
+<div id="game" class="screen">
+  <canvas id="cv"></canvas>
+  <button id="hudbtn" title="Меню">❚❚</button>
+  <div id="msgDead"></div>
+  <div id="touch"></div>
+</div>
+
+<div id="ovl"><div class="card" id="ovlCard"></div></div>
+<div id="toast"></div>
+<div id="rot"><div>📱</div><b>Поверни телефон горизонтально</b></div>
+
+<script src="core.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

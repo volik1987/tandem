@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Тандем — сетевой тест</title>
+<style>body{margin:0;background:#111;color:#ddd;font:14px sans-serif}
+.wrap{display:flex;gap:0}.col{width:640px}.col b{display:block;padding:4px 8px;background:#222}
+iframe{width:640px;height:352px;border:0;display:block}#log{padding:6px 10px;white-space:pre-wrap;font:12px monospace;height:300px;overflow:auto}</style>
+</head><body>
+<div class="wrap">
+  <div class="col"><b id="hl">Хост (Уголёк)</b><iframe id="host"></iframe></div>
+  <div class="col"><b id="jl">Гость (Капля)</b><iframe id="join"></iframe></div>
+</div>
+<div id="log"></div>
+<script src="bot.js"></script>
+<script>
+const P = new URLSearchParams(location.search);
+const LV = +(P.get('lvl') || 2), CODE = P.get('code') || String(1000 + Math.floor(Math.random() * 9000));
+const extra = (P.get('lag') ? '&lag=' + P.get('lag') : '') + (P.get('loss') ? '&loss=' + P.get('loss') : '');
+const host = document.getElementById('host'), join = document.getElementById('join');
+host.src = `../index.html?local=1&all=1&autohost=${CODE}&lvl=${LV}${extra}`;
+setTimeout(() => { join.src = `../index.html?local=1&all=1&autojoin=${CODE}${extra}`; }, 700);
+const logEl = document.getElementById('log');
+const log = s => { logEl.textContent += s + '\n'; };
+window.RESULT = { phase: 'start', checks: {}, errors: [] };
+const R = window.RESULT;
+let gen = null, botS = null, maxErr = 0, doorLag = [], n = 0;
+function hookUp() {
+  const H = host.contentWindow, J = join.contentWindow;
+  if (!H.TANDEM || !J.TANDEM) return setTimeout(hookUp, 100);
+  H.TANDEM.hook = (G) => {
+    n++;
+    if (G.S !== botS) {
+      botS = G.S;
+      // бот видит Уголька глазами хоста, а Каплю — глазами гостя (его предсказание), как живые игроки
+      const V = {}; const S0 = G.S;
+      for (const k of ['b', 'p', 'd', 'v', 'bt', 'c', 'ch', 'm', 'k', 'st', 'tm']) Object.defineProperty(V, k, { get: () => S0[k] });
+      Object.defineProperty(V, 'h', { get: () => { const JG = J.TANDEM.G; const ph = JG.P && JG.auth && JG.auth.st === 'play' && JG.L && JG.L.idx === G.L.idx ? JG.P.h[1] : S0.h[1]; return [S0.h[0], ph]; } });
+      gen = TBOT.SOLUTIONS[G.L.idx](TBOT.makeBot(H.TANDEM.C, G.L, V, { lat: +(P.get('blat') || 1) }))[Symbol.iterator]();
+      if (n > 1) log('рестарт уровня на тике ' + n);
+    }
+    let v = [0, 0];
+    if (gen) { try { const r = gen.next(); if (r.done) gen = null; else v = r.value; } catch (e) { R.errors.push(e.message); log('бот: ' + e.message); gen = null; } }
+    H.TANDEM.force = v[0]; J.TANDEM.force = v[1];
+    // сверки
+    const JG = J.TANDEM.G;
+    if (JG.P && JG.auth && JG.auth.st === 'play') {
+      const e = Math.hypot(JG.P.h[1].x - G.S.h[1].x, JG.P.h[1].y - G.S.h[1].y);
+      if (e > maxErr) maxErr = e;
+    }
+  };
+  log('хуки установлены');
+}
+setTimeout(hookUp, 1500);
+// снимок состояния для CDP
+setInterval(() => {
+  const H = host.contentWindow, J = join.contentWindow;
+  if (!H.TANDEM || !J.TANDEM) return;
+  const HG = H.TANDEM.G, JG = J.TANDEM.G;
+  R.host = { scr: HG.scr, conn: HG.connected, st: HG.S && HG.S.st, k: HG.S && HG.S.k, h: HG.S && HG.S.h.map(h => [+h.x.toFixed(1), +h.y.toFixed(1)]), d: HG.S && HG.S.d.map(x => +x.toFixed(2)), bt: HG.S && HG.S.bt.slice(), ack: HG.ack, q: HG.q.length, won: HG.wonShown };
+  R.join = { scr: JG.scr, conn: JG.connected, st: JG.auth && JG.auth.st, k: JG.auth && JG.auth.k, h: JG.auth && JG.auth.h.map(h => [+h.x.toFixed(1), +h.y.toFixed(1)]), d: JG.auth && JG.auth.d.map(x => +x.toFixed(2)), bt: JG.auth && JG.auth.bt.slice(),
+    pred: JG.P && [+JG.P.h[1].x.toFixed(1), +JG.P.h[1].y.toFixed(1)], pending: JG.pending.length, rtt: JG.rtt, won: JG.wonShown, other: (() => { try { const o = J.TANDEM.other && J.TANDEM.other(); return o && [+o.x.toFixed(1), +o.y.toFixed(1)]; } catch (e) { return null; } })() };
+  R.maxPredErr = +maxErr.toFixed(1);
+  document.getElementById('hl').textContent = `Хост (Уголёк) — ${R.host.scr} ${R.host.st || ''} тик ${R.host.k || 0} двери ${JSON.stringify(R.host.d)}`;
+  document.getElementById('jl').textContent = `Гость (Капля) — ${R.join.scr} ${R.join.st || ''} тик ${R.join.k || 0} двери ${JSON.stringify(R.join.d)} rtt ${R.join.rtt}`;
+}, 100);
+</script></body></html>
